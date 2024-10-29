@@ -1,41 +1,77 @@
-class Author():
-    def __init__(self):
-        self.author_list = {}
-    
-    def add_author(self, name, bio):
-        if name in self.author_list:
-            print("Author already in list.")
-            return
-        self.author_list[name] = {}
-        self.author_list[name]["name"] = name
-        self.author_list[name]["bio"] = bio
+from connect_mysql import connect_database
 
-    def search_author(self):
-        if self.author_list:
-            search_term = input("Enter the author you'd like to search for: ").title()
-            match_found = False
-            for author in self.author_list.values():
-                if search_term in author.values():
-                    match_found = True
-                    print(f"Match found:\n{author["name"]}\nAuthor bio:\n{author["bio"]}")
-            if not match_found:
-                print("No matches found. Sorry.")
-        else:
-            print("No authors in the database. Sorry.")
-    
-    def display_authors(self):
-        if self.author_list:
-            for value in self.author_list.values():
-                print(f"Author:\n{value["name"]}\nBio:\n{value["bio"]}\n\n")
-        else:
-            print("No books here!")
-            return
+def add_authors():
 
+    new_author_name = input("Enter the name of the author you'd like to add: ").title()
+    new_author_bio = input(f"Enter a brief description of {new_author_name}: ")
+    if new_author_bio == "":
+        new_author_bio = "None"
+    conn = connect_database()
+    if conn is not None:
+        try:
+            cursor = conn.cursor()
+            
+            new_author = (new_author_name, new_author_bio)
 
-def add_authors(authors):
+            query = "INSERT INTO authors (name, biography) VALUES (%s, %s)"
 
-    new_author = input("Enter the name of the author you'd like to add: ")
-    new_bio = input(f"Enter a brief description of {new_author}: ")
-    if new_bio == "":
-        new_bio = "None"
-    authors.add_author(new_author, new_bio)
+            cursor.execute(query, new_author)
+            conn.commit()
+            print("Author added successfully.")
+
+        except Exception as e:
+            print(f"Error: {e}")
+        finally:
+            cursor.close()
+            conn.close()
+    else:
+        print("Couldn't find the database.")
+
+def search_authors():
+    author = input("Enter the author you'd like to search for: ").title()
+    author_search_term = "%" + author + "%"
+    author_search = (author_search_term, )
+    conn = connect_database()
+    if conn is not None:
+        try:
+            cursor = conn.cursor()
+
+            query = "SELECT * FROM authors WHERE name LIKE %s"
+
+            cursor.execute(query, author_search)
+            authors = cursor.fetchall()
+            if not authors:
+                print("No matches found.")
+            for author in authors:
+                print("Match found:")
+                print(author)
+
+        except Exception as e:
+            print(f"Error: {e}")
+        finally:
+            cursor.close()
+            conn.close()
+    else:
+        print("Couldn't find the database.")
+
+def display_authors():
+    conn = connect_database()
+    if conn is not None:
+        try:
+            cursor = conn.cursor()
+
+            query = "SELECT * FROM authors"
+
+            cursor.execute(query)
+            
+            for author in cursor.fetchall():
+                print(author)
+
+        except Exception as e:
+            print(f"Error: {e}")
+
+        finally:
+            cursor.close()
+            conn.close()
+    else:
+        print("Couldn't find the database.")
